@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
+  <style>
+    #messages { list-style-type: none; padding: 0; max-height: 300px; overflow-y: scroll; }
+    #messages li { padding: 8px; border-bottom: 1px solid #ddd; }
+    #form { display: flex; margin-top: 10px; }
+    #input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    #send, #send-server { padding: 10px; margin-left: 5px; border: none; border-radius: 4px; background-color: #4CAF50; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Chat Room</h1>
+  <ul id="messages"></ul>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Type a message..." />
+    <button id="send">Send</button>
+    <button type="button" id="send-server">Send as Server</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messagesList = document.getElementById('messages');
+    const input = document.getElementById('input');
+    const form = document.getElementById('form');
+    const sendServerButton = document.getElementById('send-server');
+
+    // 기존 채팅 기록 표시
+    socket.on('chat history', (messages) => {
+      messages.forEach(msg => {
+        const item = document.createElement('li');
+        item.textContent = msg.message_text;
+        messagesList.appendChild(item);
+      });
+      messagesList.scrollTop = messagesList.scrollHeight; // 스크롤을 가장 아래로 이동
+    });
+
+    // 새로운 메시지 표시
+    socket.on('chat message', (msg) => {
+      const item = document.createElement('li');
+      item.textContent = msg.text;
+      messagesList.appendChild(item);
+      messagesList.scrollTop = messagesList.scrollHeight; // 스크롤을 가장 아래로 이동
+    });
+
+    // 사용자 메시지 전송
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (input.value) {
+        const message = {
+          text: input.value,
+          isUser: true
+        };
+        socket.emit('chat message', message); // 서버로 메시지 전송
+        input.value = '';
+      }
+    });
+
+    // 서버 메시지 전송
+    sendServerButton.addEventListener('click', function() {
+      if (input.value) {
+        const message = {
+          text: input.value,
+          isUser: false
+        };
+        socket.emit('chat message', message); // 서버로 메시지 전송
+        input.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
